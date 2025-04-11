@@ -19,6 +19,9 @@
     "express": "^4.21.2",
     "mongodb": "^6.15.0",
     "mongoose": "^6.13.8",
-    "nodemon": "^2.0.20"
+    "nodemailer": "^6.10.0",
+    "nodemon": "^2.0.20",
+    "socket.io": "^4.8.1",
+    "twilio": "^5.5.2"
   }
 }

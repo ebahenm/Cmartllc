@@ -8,11 +8,16 @@ const mongoose = require('mongoose');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const bookingsRoute = require('./routes/bookings');
+const driversRoute = require('./routes/drivers');
 
 const app = express();
 
 // Parse incoming JSON requests
 app.use(express.json());
+
+// Routes
+app.use('/api/bookings', bookingsRoute);
+app.use('/api/drivers', driversRoute);
 
 // Set Mongoose's strictQuery option to avoid deprecation warnings
 mongoose.set('strictQuery', false);
@@ -40,7 +45,7 @@ app.get('*', (req, res) => {
 });
 
 // Define the port from environment or default value (here, 443)
-const PORT = process.env.PORT || 22;
+const PORT = process.env.PORT || 5000;
 
 // Start the server, listening on all network interfaces
 app.listen(PORT, '0.0.0.0', () => {

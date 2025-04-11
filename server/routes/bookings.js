@@ -2,15 +2,15 @@
 const express = require('express');
 const router = express.Router();
 const Booking = require('../models/Booking');
-const User = require('../models/User');
-const Vehicle = require('../models/Vehicle');
+const User = require('../models/User'); // or whichever user model you have
+const Driver = require('../models/Driver');
+const { sendSMS } = require('../notifications/sms'); // if using SMS
 
-// @route   POST /api/bookings
-// @desc    Create a new booking
-// @access  Public (You may add authentication later)
+// POST /api/bookings - create a new booking
 router.post('/', async (req, res) => {
   try {
-    // 1) Check if the user already exists or create new
+    // 1) Find or create user
+    //    (This depends on how your existing code handles user data)
     let user = await User.findOne({ phone: req.body.phone });
     if (!user) {
       user = new User({
@@ -21,29 +21,33 @@ router.post('/', async (req, res) => {
       await user.save();
     }
 
-    // 2) Find the selected vehicle
-    const vehicle = await Vehicle.findOne({ _id: req.body.vehicleId });
-    if (!vehicle) {
-      return res.status(404).json({ error: 'Vehicle not found' });
+    // 2) Select a driver (for now, pick the first driver in the DB or a specific driver)
+    const driver = await Driver.findOne(); // naive approach
+    if (!driver) {
+      return res.status(400).json({ error: 'No drivers available' });
     }
 
     // 3) Create the booking
     const booking = new Booking({
       user: user._id,
-      vehicle: vehicle._id,
+      // vehicle: ID of the vehicle from your request or logic
       pickupLocation: req.body.pickupLocation,
       dropoffLocation: req.body.dropoffLocation,
-      date: req.body.date,  // e.g., "2025-05-12"
-      time: req.body.time   // e.g., "10:30 AM"
+      date: req.body.date,
+      time: req.body.time,
+      // default status: 'pending'
+      driver: driver._id
     });
-
     await booking.save();
 
-    // 4) Return the newly created booking
-    return res.status(201).json({ message: 'Booking created', booking });
+    // 4) Notify the driver (SMS or email)
+    const message = `New Booking!\nPickup: ${booking.pickupLocation}\nDropoff: ${booking.dropoffLocation}\nDate/Time: ${booking.date}, ${booking.time}`;
+    sendSMS(driver.phone, message); // or your chosen method
+
+    res.status(201).json({ message: 'Booking created', booking });
   } catch (error) {
     console.error('Error creating booking:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
