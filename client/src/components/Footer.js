@@ -12,7 +12,7 @@ function Footer() {
         <div className="footer-links">
           {/* Change href to a valid fragment URL */}
           <a href="/#book">Book a Ride</a>
-          <a href="tel:+15026396216">Call Now</a>
+          <a href="tel:+15046410004">Call Now</a>
           <a href="mailto:ouldm1969@gmail.com">Email Us</a>
         </div>
         <div className="social-links">

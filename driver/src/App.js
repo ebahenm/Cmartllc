@@ -1,14 +1,38 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import io from 'socket.io-client';
+import Header from './components/Header';
+import Footer from './components/Footer';
 import BookingList from './components/BookingList';
 
+// Connect to your backend. Adjust the URL and port as needed.
+const socket = io('http://147.93.46.237:5000');
+
 function App() {
-  // Suppose driverId is "64ad...someObjectId"
-  const driverId = '64abc123def456...'; // Replace with real ID from your DB
+  const [bookings, setBookings] = useState([]);
+
+  useEffect(() => {
+    // Listen for new booking notifications from the backend
+    socket.on('newBooking', (booking) => {
+      console.log('Received new booking:', booking);
+      // Prepend the new booking to the list
+      setBookings((prev) => [booking, ...prev]);
+    });
+    
+    // Clean up the socket connection on component unmount
+    return () => {
+      socket.off('newBooking');
+    };
+  }, []);
 
   return (
-    <div>
-      <h1>Driver Dashboard</h1>
-      <BookingList driverId={driverId} />
+    <div className="app-container">
+      <Header />
+      <main className="main-content">
+        <h1>Driver Dashboard</h1>
+        <p>Welcome! You will receive new ride notifications in real time below.</p>
+        <BookingList bookings={bookings} />
+      </main>
+      <Footer />
     </div>
   );
 }
