@@ -1,3 +1,4 @@
+// src/components/BookingForm.js
 import React, { useState } from 'react';
 
 function BookingForm() {
@@ -15,7 +16,7 @@ function BookingForm() {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({...formData, [e.target.name]: e.target.value});
   };
 
   const handleSubmit = async (e) => {
@@ -23,10 +24,10 @@ function BookingForm() {
     setLoading(true);
     setResponseMessage('');
     try {
-      // Update the endpoint URL as necessary.
-      const response = await fetch('http://44.248.45.70/api/bookings', {
+      // Use relative URL so that it works with your proxy or reverse proxy setup
+      const response = await fetch('/api/bookings', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData),
@@ -82,7 +83,6 @@ function BookingForm() {
           />
         </div>
       </div>
-
       <div className="form-row">
         <div className="form-group">
           <label htmlFor="phone">Phone Number</label>
@@ -106,14 +106,11 @@ function BookingForm() {
             onChange={handleChange}
           >
             <option value="">Select a vehicle</option>
-            <option value="Chevrolet Suburban 2023">
-              Chevrolet Suburban 2023
-            </option>
+            <option value="Chevrolet Suburban 2023">Chevrolet Suburban 2023</option>
             <option value="Kia Sedona 2020">Kia Sedona 2020</option>
           </select>
         </div>
       </div>
-
       <div className="form-group">
         <label htmlFor="pickup_time">Pickup Date &amp; Time</label>
         <input
@@ -125,7 +122,6 @@ function BookingForm() {
           onChange={handleChange}
         />
       </div>
-
       <div className="form-row">
         <div className="form-group">
           <label htmlFor="pickup_location">Pickup Location</label>
@@ -152,7 +148,6 @@ function BookingForm() {
           />
         </div>
       </div>
-
       <div className="form-group">
         <label htmlFor="special_requests">Special Requests (Optional)</label>
         <textarea
@@ -164,11 +159,9 @@ function BookingForm() {
           onChange={handleChange}
         ></textarea>
       </div>
-
       <button type="submit" className="btn" id="submitBtn" disabled={loading}>
         {loading ? 'Processing...' : 'Confirm Booking'}
       </button>
-
       {responseMessage && (
         <div
           id="responseMessage"

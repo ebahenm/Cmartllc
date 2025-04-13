@@ -1,4 +1,5 @@
-/* Global Styles */
+/* src/App.css */
+
 :root {
   --primary: #2c3e50;
   --secondary: #e74c3c;
@@ -19,6 +20,7 @@ body {
   line-height: 1.6;
 }
 
+/* Container */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -26,7 +28,7 @@ body {
 }
 
 /* Header */
-.site-header {
+header {
   background: linear-gradient(135deg, var(--primary), var(--dark));
   color: white;
   padding: 20px 0;
@@ -34,21 +36,20 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.site-header .logo {
+.logo {
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 10px;
 }
 
-.site-header .tagline {
+.tagline {
   font-size: 1.2rem;
   opacity: 0.9;
 }
 
 /* Hero Section */
 .hero {
-  background: url('https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80')
-    no-repeat center center/cover;
+  background: url('https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') no-repeat center center/cover;
   height: 400px;
   display: flex;
   align-items: center;
@@ -111,7 +112,7 @@ body {
 }
 
 .btn-outline:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255,255,255,0.1);
 }
 
 /* Fleet Section */
@@ -164,7 +165,7 @@ body {
   color: #666;
 }
 
-/* Booking Section */
+/* Booking Form */
 .booking-section {
   background: var(--light);
   padding: 50px 0;
@@ -212,7 +213,6 @@ body {
 .form-row {
   display: flex;
   gap: 20px;
-  flex-wrap: wrap;
 }
 
 .form-row .form-group {
@@ -240,66 +240,153 @@ body {
   display: block !important;
 }
 
+/* Contact Section */
+.contact-section {
+  background: #f5f5f5;
+  padding: 50px 0;
+}
+
+.contact-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  justify-content: center;
+}
+
+.contact-card {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  flex: 1;
+  min-width: 300px;
+  max-width: 500px;
+}
+
+.map-card {
+  flex: 1;
+  min-width: 300px;
+  max-width: 500px;
+}
+
+.contact-card h3 {
+  color: var(--primary);
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  text-align: center;
+}
+
+.contact-info {
+  list-style: none;
+  margin-top: 20px;
+}
+
+.contact-info li {
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+}
+
+.contact-info i {
+  color: var(--secondary);
+  width: 25px;
+  text-align: center;
+  margin-right: 10px;
+}
+
+.contact-info a {
+  color: var(--dark);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.contact-info a:hover {
+  color: var(--secondary);
+}
+
+.map-container {
+  height: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.map-container iframe {
+  width: 100%;
+  height: 400px;
+  border: 0;
+}
+
+.call-now {
+  text-align: center;
+  margin-top: 30px;
+}
+
 /* Footer */
-.site-footer {
+footer {
   background: var(--dark);
   color: white;
   text-align: center;
   padding: 30px 0;
 }
 
-.site-footer .footer-contact {
-  margin: 15px 0;
-  font-size: 1.1rem;
-}
-
-.site-footer .footer-links {
+.social-links {
   margin: 20px 0;
 }
 
-.site-footer .footer-links a {
-  color: white;
-  margin: 0 10px;
-  text-decoration: none;
-}
-
-.site-footer .footer-links a:hover {
-  text-decoration: underline;
-}
-
-.site-footer .social-links {
-  margin: 20px 0;
-}
-
-.site-footer .social-links a {
+.social-links a {
   color: white;
   margin: 0 15px;
   font-size: 1.5rem;
   transition: color 0.3s ease;
 }
 
-.site-footer .social-links a:hover {
+.social-links a:hover {
   color: var(--secondary);
+}
+
+.footer-contact {
+  margin: 15px 0;
+  font-size: 1.1rem;
+}
+
+.footer-links {
+  margin: 20px 0;
+}
+
+.footer-links a {
+  color: white;
+  margin: 0 10px;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  text-decoration: underline;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .hero h1 {
-    font-size: 2.2rem;
+      font-size: 2.2rem;
   }
   
   .form-row {
-    flex-direction: column;
-    gap: 0;
+      flex-direction: column;
+      gap: 0;
   }
 
-  .fleet {
-    flex-direction: column;
-    align-items: center;
+  .contact-card, .map-card {
+      min-width: 100%;
   }
 
-  .vehicle-card {
-    width: 100%;
-    max-width: 400px;
+  .hero-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+  }
+
+  .hero-buttons .btn {
+      margin: 0 !important;
   }
 }

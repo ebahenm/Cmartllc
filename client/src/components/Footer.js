@@ -16,7 +16,7 @@ function Footer() {
           <a href="mailto:ouldm1969@gmail.com">Email Us</a>
         </div>
         <div className="social-links">
-          <a href="tel:+15026396216" aria-label="Call us">
+          <a href="tel:15046410004" aria-label="Call us">
             <i className="fas fa-phone"></i>
           </a>
           <a href="mailto:ouldm1969@gmail.com" aria-label="Email us">
