@@ -1,16 +1,20 @@
 // server/models/Driver.js
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const driverSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  phone: { type: String, required: true },
-  email: { type: String },
-  // Possibly store vehicle(s) linked to this driver
-  vehicle: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Vehicle'
+const driverSchema = new Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  phone: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String
   }
-  // Add other fields like availability status, etc.
-});
+}, { timestamps: true });
 
+// Export the Mongoose model. This model will have methods like .findOne()
 module.exports = mongoose.model('Driver', driverSchema);

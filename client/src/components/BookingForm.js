@@ -1,4 +1,3 @@
-// src/components/BookingForm.js
 import React, { useState } from 'react';
 
 function BookingForm() {
@@ -7,7 +6,7 @@ function BookingForm() {
     email: '',
     phone: '',
     vehicle: '',
-    pickup_time: '',
+    pickup_time: '',       // This is the datetime-local input
     pickup_location: '',
     dropoff_location: '',
     special_requests: '',
@@ -15,26 +14,52 @@ function BookingForm() {
   const [responseMessage, setResponseMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Handles input changes by updating state.
   const handleChange = (e) => {
-    setFormData({...formData, [e.target.name]: e.target.value});
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // When the booking form is submitted...
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setResponseMessage('');
+
     try {
-      // Use relative URL so that it works with your proxy or reverse proxy setup
+      // Split pickup_time into date and time parts.
+      // Expected format from datetime-local input: "YYYY-MM-DDTHH:MM"
+      let date = '';
+      let time = '';
+      if (formData.pickup_time) {
+        [date, time] = formData.pickup_time.split('T');
+      }
+
+      // Construct a payload with keys matching what your Booking schema expects.
+      const bookingPayload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        vehicle: formData.vehicle,
+        pickupLocation: formData.pickup_location,     // Changed key from pickup_location
+        dropoffLocation: formData.dropoff_location,   // Changed key from dropoff_location
+        date,                                         // Split date part from pickup_time
+        time,                                         // Split time part from pickup_time
+        special_requests: formData.special_requests,
+      };
+
+      // Make the POST request using a relative endpoint.
       const response = await fetch('/api/bookings', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+        headers: { 
+          'Content-Type': 'application/json' 
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(bookingPayload),
       });
+
       const result = await response.json();
       if (response.ok) {
         setResponseMessage(result.message || 'Booking created successfully!');
+        // Reset the form data.
         setFormData({
           name: '',
           email: '',
@@ -83,6 +108,7 @@ function BookingForm() {
           />
         </div>
       </div>
+
       <div className="form-row">
         <div className="form-group">
           <label htmlFor="phone">Phone Number</label>
@@ -111,6 +137,8 @@ function BookingForm() {
           </select>
         </div>
       </div>
+
+      {/* Use a datetime-local input for pickup time */}
       <div className="form-group">
         <label htmlFor="pickup_time">Pickup Date &amp; Time</label>
         <input
@@ -122,6 +150,7 @@ function BookingForm() {
           onChange={handleChange}
         />
       </div>
+
       <div className="form-row">
         <div className="form-group">
           <label htmlFor="pickup_location">Pickup Location</label>
@@ -148,6 +177,7 @@ function BookingForm() {
           />
         </div>
       </div>
+
       <div className="form-group">
         <label htmlFor="special_requests">Special Requests (Optional)</label>
         <textarea
@@ -159,9 +189,11 @@ function BookingForm() {
           onChange={handleChange}
         ></textarea>
       </div>
+
       <button type="submit" className="btn" id="submitBtn" disabled={loading}>
         {loading ? 'Processing...' : 'Confirm Booking'}
       </button>
+
       {responseMessage && (
         <div
           id="responseMessage"

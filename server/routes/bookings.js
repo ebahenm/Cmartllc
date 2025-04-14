@@ -2,13 +2,14 @@
 const express = require('express');
 const router = express.Router();
 const Booking = require('../models/Booking');
-const User = require('../models/User'); // or your user model
+const User = require('../models/User');
 const Driver = require('../models/Driver');
+console.log("Driver model:", Driver);
 
 // POST /api/bookings - create a new booking and notify driver
 router.post('/', async (req, res) => {
   try {
-    // --- 1. Handle user creation/fetching (example) ---
+    // 1. Find or create the customer user
     let user = await User.findOne({ phone: req.body.phone });
     if (!user) {
       user = new User({
@@ -19,29 +20,32 @@ router.post('/', async (req, res) => {
       await user.save();
     }
     
-    // --- 2. Select a driver (for example, the first available driver) ---
-    const driver = await Driver.findOne();
+    // 2. Instead of doing a generic query, force the booking to be assigned to the test driver.
+    const testDriverId = "67fc8da6215db7b1625af726"; // Test driver ID
+
+    // Optionally, you can verify the driver exists in your database.
+    const driver = await Driver.findOne({ _id: testDriverId });
     if (!driver) {
       return res.status(400).json({ error: 'No drivers available' });
     }
     
-    // --- 3. Create the booking ---
+    // 3. Create the booking with the required fields.
     const booking = new Booking({
       user: user._id,
-      // Include additional booking fields as needed
-      pickupLocation: req.body.pickupLocation,
-      dropoffLocation: req.body.dropoffLocation,
-      date: req.body.date,
+      vehicle: req.body.vehicle,
+      pickupLocation: req.body.pickup_location,  // Ensure keys match your Booking schema
+      dropoffLocation: req.body.dropoff_location,
+      date: req.body.date,                        // Should be provided if you split date/time in frontend
       time: req.body.time,
-      status: 'pending',
-      driver: driver._id  // assign the driver
+      special_requests: req.body.special_requests,
+      driver: driver._id,  // Assign the test driver
     });
     await booking.save();
     
-    // --- 4. Notify the driver via Socket.IO ---
-    // app.locals.io is set in server.js; emit "newBooking" event to all connected clients.
+    // 4. Emit the newBooking event via Socket.IO
+    console.log('Emitting newBooking event with booking:', booking);
     req.app.locals.io.emit('newBooking', booking);
-    
+
     res.status(201).json({ message: 'Booking created', booking });
   } catch (error) {
     console.error('Error creating booking:', error);

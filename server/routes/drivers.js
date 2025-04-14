@@ -7,8 +7,8 @@ const Booking = require('../models/Booking');
 router.get('/:driverId/bookings', async (req, res) => {
   try {
     const { driverId } = req.params;
-    // find bookings assigned to this driver
     const bookings = await Booking.find({ driver: driverId }).sort({ date: 1 });
+    console.log(`Fetched ${bookings.length} bookings for driver ${driverId}`);
     res.json(bookings);
   } catch (error) {
     console.error(error);
@@ -16,20 +16,18 @@ router.get('/:driverId/bookings', async (req, res) => {
   }
 });
 
-// POST /api/drivers/:driverId/booking/:bookingId/status
-// Example of updating booking status (accept, complete, etc.)
+// POST /api/drivers/:driverId/booking/:bookingId/status - update booking status
 router.post('/:driverId/booking/:bookingId/status', async (req, res) => {
   try {
     const { driverId, bookingId } = req.params;
-    const { status } = req.body; // e.g. 'assigned' or 'completed'
-
+    const { status } = req.body;  // e.g., 'assigned', 'completed'
     const booking = await Booking.findOneAndUpdate(
       { _id: bookingId, driver: driverId },
       { status },
       { new: true }
     );
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
-
+    console.log(`Updated booking ${bookingId} to status ${status}`);
     res.json({ message: 'Booking status updated', booking });
   } catch (error) {
     console.error(error);
