@@ -6,14 +6,15 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors');
 
-const bookingsRoute = require('./routes/bookings');
-const driversRoute = require('./routes/drivers');
-
+// Create the Express app
 const app = express();
 
-// Parse incoming JSON requests
+// Middleware to parse incoming JSON requests
 app.use(express.json());
+// Enable CORS if needed (adjust settings as required)
+app.use(cors());
 
 // Set Mongoose's strictQuery option to avoid deprecation warnings
 mongoose.set('strictQuery', false);
@@ -26,10 +27,9 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('Error connecting to MongoDB:', err));
 
-  const cors = require('cors');
-  app.use(cors());
-  
-// Set up API routes
+// Set up API routes before static files (order doesn't affect the runtime app.locals)
+const bookingsRoute = require('./routes/bookings');
+const driversRoute = require('./routes/drivers');
 app.use('/api/bookings', bookingsRoute);
 app.use('/api/drivers', driversRoute);
 
@@ -58,7 +58,6 @@ io.on('connection', (socket) => {
 
 // Make the io instance available to your routes via app.locals
 app.locals.io = io;
-
 // ------------------------------
 
 // Define the port (use PORT from environment or default to 5000)
