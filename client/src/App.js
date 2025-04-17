@@ -1,9 +1,10 @@
-// src/App.js
+// client/src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import CustomerHome from './pages/CustomerHome';
-import Header from './components/Header';
-import Footer from './components/Footer';
+import CustomerHome     from './pages/CustomerHome';
+import ConfirmationPage from './pages/ConfirmationPage';
+import Header           from './components/Header';
+import Footer           from './components/Footer';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       <Header />
       <Routes>
         <Route path="/" element={<CustomerHome />} />
+        <Route path="/confirmation" element={<ConfirmationPage />} />
       </Routes>
       <Footer />
     </Router>

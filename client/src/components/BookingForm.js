@@ -1,82 +1,72 @@
-//Cmartllc/client/src/components/BookingForm.js
-import React, { useState } from 'react';
+// src/components/BookingForm.js
 
-function BookingForm() {
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+export default function BookingForm() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     vehicle: '',
-    pickup_time: '',       // This is the datetime-local input
+    pickup_time: '',
     pickup_location: '',
     dropoff_location: '',
-    special_requests: '',
+    special_requests: ''
   });
   const [responseMessage, setResponseMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  // Handles input changes by updating state.
+  // Update formData when inputs change
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
   };
 
-  // When the booking form is submitted...
+  // On submit, split date/time, build payload, POST, then redirect
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setResponseMessage('');
 
+    // Split pickup_time into date + time
+    let date = '', time = '';
+    if (formData.pickup_time) {
+      [date, time] = formData.pickup_time.split('T');
+    }
+
+    // Build the payload matching your Booking schema
+    const bookingPayload = {
+      name:              formData.name,
+      email:             formData.email,
+      phone:             formData.phone,
+      vehicle:           formData.vehicle,
+      pickupLocation:    formData.pickup_location,
+      dropoffLocation:   formData.dropoff_location,
+      date,
+      time,
+      special_requests:  formData.special_requests
+    };
+
     try {
-      // Split pickup_time into date and time parts.
-      // Expected format from datetime-local input: "YYYY-MM-DDTHH:MM"
-      let date = '';
-      let time = '';
-      if (formData.pickup_time) {
-        [date, time] = formData.pickup_time.split('T');
-      }
-
-      // Construct a payload with keys matching what your Booking schema expects.
-      const bookingPayload = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        vehicle: formData.vehicle,
-        pickupLocation: formData.pickup_location,     // Changed key from pickup_location
-        dropoffLocation: formData.dropoff_location,   // Changed key from dropoff_location
-        date,                                         // Split date part from pickup_time
-        time,                                         // Split time part from pickup_time
-        special_requests: formData.special_requests,
-      };
-
-      // Make the POST request using a relative endpoint.
-      const response = await fetch('/api/bookings', {
+      const res = await fetch('/api/bookings', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json' 
-        },
-        body: JSON.stringify(bookingPayload),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingPayload)
       });
+      const result = await res.json();
 
-      const result = await response.json();
-      if (response.ok) {
-        setResponseMessage(result.message || 'Booking created successfully!');
-        // Reset the form data.
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          vehicle: '',
-          pickup_time: '',
-          pickup_location: '',
-          dropoff_location: '',
-          special_requests: '',
-        });
+      if (res.ok) {
+        // Pass the returned booking (with populated driver) to confirmation page
+        navigate('/confirmation', { state: { booking: result.booking } });
       } else {
         throw new Error(result.error || 'Booking failed');
       }
-    } catch (error) {
-      setResponseMessage(error.message);
-    } finally {
+    } catch (err) {
+      setResponseMessage(err.message);
       setLoading(false);
     }
   };
@@ -139,7 +129,6 @@ function BookingForm() {
         </div>
       </div>
 
-      {/* Use a datetime-local input for pickup time */}
       <div className="form-group">
         <label htmlFor="pickup_time">Pickup Date &amp; Time</label>
         <input
@@ -191,20 +180,14 @@ function BookingForm() {
         ></textarea>
       </div>
 
-      <button type="submit" className="btn" id="submitBtn" disabled={loading}>
-        {loading ? 'Processing...' : 'Confirm Booking'}
+      <button type="submit" className="btn" disabled={loading}>
+        {loading ? 'Processing…' : 'Confirm Booking'}
       </button>
-
       {responseMessage && (
-        <div
-          id="responseMessage"
-          className={responseMessage.includes('successfully') ? 'success' : 'error'}
-        >
+        <div className={responseMessage.includes('failed') ? 'error' : 'success'}>
           {responseMessage}
         </div>
       )}
     </form>
   );
 }
-
-export default BookingForm;

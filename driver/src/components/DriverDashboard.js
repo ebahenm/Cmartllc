@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import axios from 'axios';
 
 // Use your domain with HTTPS as appropriate (adjust protocol if needed)
-const SOCKET_SERVER_URL = "https://cmartllc.com"; 
+const SOCKET_SERVER_URL = "https://driver.cmartllc.com";
 // If your API is served on the same domain by your reverse proxy, you can use a relative URL.
 const BOOKINGS_API_URL = "/api/bookings"; 
 
@@ -60,7 +60,6 @@ const DriverDashboard = () => {
               padding: '10px',
               borderRadius: '5px'
             }}>
-              <p><strong>Ride ID:</strong> {ride._id}</p>
               <p><strong>Vehicle:</strong> {ride.vehicle}</p>
               <p><strong>Pickup Location:</strong> {ride.pickupLocation}</p>
               <p><strong>Dropoff Location:</strong> {ride.dropoffLocation}</p>
