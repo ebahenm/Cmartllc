@@ -1,15 +1,19 @@
+// src/index.js
+
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import './App.css'; // Import global styling if needed
+import './App.css';  
 
-// const rootElement = document.getElementById('root');
-// if (!rootElement) {
-//   console.error("Could not find element with id 'root'");
-// } else {
-//   const root = ReactDOM.createRoot(rootElement);
-//   root.render(<App />);
-// }
+ const container = document.getElementById('root');
+ const root = createRoot(container);
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
+root.render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>,  document.getElementById('root')
+
+);

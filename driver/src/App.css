@@ -1,97 +1,248 @@
-/* General */
+/*──────────────────────────────────────────────────────────
+  Global Styles & Theme
+──────────────────────────────────────────────────────────*/
+/* only needed to offset the fixed navbar */
 body {
-  margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background-color: #f4f4f4;
-  color: #333;
+  padding-top: 56px; /* matches Header’s navbar height */
 }
 
-.app-container {
+/* 1) Font import comes via index.html */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --font-base: 'Poppins', sans-serif;
+  --bg: #f9fafb;
+  --fg: #333;
+  --card-bg: #fff;
+  --primary: #0d6efd;
+  --primary-dark: #0b5ed7;
+  --header-bg: #343a40;
+  --light: #fff;
+  --radius: 8px;
+  --shadow-sm: rgba(0,0,0,0.05) 0px 2px 8px;
+  --header-height: 56px;
+}
+
+body {
+  font-family: var(--font-base);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.5;
+  padding-top: var(--header-height); /* push content below fixed header */
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* App wrapper */
+.app {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-/* Container */
-.container {
-  width: 90%;
-  max-width: 1200px;
+/* Main content area */
+.content {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-/* Header */
-.header {
-  background: #2c3e50;
-  color: #fff;
-  padding: 20px 0;
-}
+/*──────────────────────────────────────────────────────────
+  Header / Navbar
+──────────────────────────────────────────────────────────*/
 
-.header .container {
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-height);
+  background: var(--header-bg);
+  z-index: 1000;
+  box-shadow: var(--shadow-sm);
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  padding: 0 1rem;
 }
 
-.logo {
-  font-size: 1.8rem;
+.navbar .brand {
+  color: var(--light);
+  font-size: 1.25rem;
   font-weight: 600;
 }
 
-.nav-list {
-  list-style: none;
+.navbar .nav-links {
+  margin-left: auto;
   display: flex;
-  gap: 20px;
+  gap: 1rem;
 }
 
-.nav-list li a {
-  color: #fff;
-  text-decoration: none;
+.navbar .nav-links a,
+.navbar .nav-links button {
+  background: none;
+  border: none;
+  color: var(--light);
   font-weight: 500;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  transition: background 0.2s;
+}
+.navbar .nav-links a:hover,
+.navbar .nav-links a.active,
+.navbar .nav-links button:hover {
+  background: rgba(255,255,255,0.1);
 }
 
-.nav-list li a:hover {
-  text-decoration: underline;
-}
+/*──────────────────────────────────────────────────────────
+  Login Page
+──────────────────────────────────────────────────────────*/
 
-/* Main Content */
-.main-content {
-  flex: 1;
-  padding: 20px;
-  background: #fff;
-  margin: 20px auto;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+.login-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--header-height) - 60px);
 }
-
-/* Booking List */
-.booking-list {
-  margin-top: 20px;
+.login-card {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+  max-width: 360px;
 }
-
-.empty-msg {
+.login-card h2 {
+  margin-bottom: 1rem;
   text-align: center;
-  color: #888;
+  color: var(--header-bg);
 }
-
-.booking-card {
-  background: #ecf0f1;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 15px;
-  border-left: 5px solid #e74c3c;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+.login-card .form-group {
+  margin-bottom: 1rem;
 }
-
-.booking-card h3 {
-  margin-top: 0;
-  color: #e74c3c;
+.login-card label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
 }
-
-/* Footer */
-.footer {
-  background: #2c3e50;
+.login-card input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: var(--radius);
+  font-size: 1rem;
+}
+.login-card .btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--primary);
+  color: var(--light);
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.login-card .btn:hover {
+  background: var(--primary-dark);
+}
+.error {
+  background: #dc3545;
   color: #fff;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
   text-align: center;
-  padding: 15px 0;
-  margin-top: 20px;
 }
+
+/*──────────────────────────────────────────────────────────
+  Dashboard & Cards
+──────────────────────────────────────────────────────────*/
+
+.section-title {
+  margin-bottom: 1rem;
+  color: var(--header-bg);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+.card h5 {
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+}
+
+/*──────────────────────────────────────────────────────────
+  Footer
+──────────────────────────────────────────────────────────*/
+
+.footer {
+  background: var(--header-bg);
+  color: var(--light);
+  text-align: center;
+  padding: 1rem;
+  margin-top: auto;
+}
+
+/* ─── Mobile Nav Toggle ─────────────────────────────────────────── */
+.menu-btn {
+  display: none; /* desktop: hidden */
+  background: none;
+  border: none;
+  color: var(--light);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* hide links on mobile by default */
+.navbar .nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+/* small‑screen adjustments */
+@media (max-width: 768px) {
+  .menu-btn {
+    display: block;        /* show hamburger */
+  }
+
+  .navbar .nav-links {
+    position: absolute;
+    top: var(--header-height);
+    left: 0; right: 0;
+    background: var(--header-bg);
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem 0;
+    display: none;         /* hide by default */
+    z-index: 999;
+  }
+
+  .navbar .nav-links.open {
+    display: flex;         /* show when .open is present */
+  }
+
+  .navbar .nav-links a,
+  .navbar .nav-links button {
+    width: 100%;
+    text-align: center;
+    padding: 0.75rem 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+}
+

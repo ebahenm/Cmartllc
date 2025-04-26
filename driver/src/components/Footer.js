@@ -1,13 +1,9 @@
 import React from 'react';
 
-function Footer() {
+export default function Footer() {
   return (
-    <footer className="footer">
-      <div className="container">
-        <p>&copy; 2025 CMART LLC. All rights reserved.</p>
-      </div>
+    <footer className="bg-dark text-light text-center py-3 mt-auto">
+      © 2025 CMART LLC Driver
     </footer>
   );
 }
-
-export default Footer;

@@ -1,131 +1,154 @@
 // server/routes/bookings.js
-const express  = require('express');
-const router   = express.Router();
-
-const Booking  = require('../models/Booking');
-const User     = require('../models/User');
-const Driver   = require('../models/Driver');
-
+const express = require('express');
+const router = express.Router();
+const Booking = require('../models/Booking');
+const User = require('../models/User');
+const Driver = require('../models/Driver');
 const nodemailer = require('nodemailer');
+const { protect } = require('../middleware/auth');
 
-/* ------------------------------------------------------------------ */
-/* 1.  Helper: build the proper 10digits@gateway address               */
-/* ------------------------------------------------------------------ */
-const GATEWAYS = {
-  verizon : 'vzwpix.com',          // Spectrum Mobile & Visible, too
-  att     : 'txt.att.net',
-  tmobile : 'tmomail.net',
-  sprint  : 'messaging.sprintpcs.com'
-  // add more as you need them
+// SMS Gateway configuration
+const CARRIER_GATEWAYS = {
+  verizon: 'vzwpix.com',
+  att:    'txt.att.net',
+  tmobile:'tmomail.net',
+  sprint: 'messaging.sprintpcs.com',
 };
 
-function buildSmsAddress(rawNumber, carrier = 'verizon') {
-  // keep only digits, then last 10
-  const digits10 = rawNumber.replace(/\D/g, '').slice(-10);
-  const gateway  = GATEWAYS[carrier.toLowerCase()] || GATEWAYS.verizon;
-  return `${digits10}@${gateway}`;           // → 5046410004@vzwpix.com
-}
-
-/* ------------------------------------------------------------------ */
-/* 2.  Nodemailer transporter                                          */
-/* ------------------------------------------------------------------ */
 const transporter = nodemailer.createTransport({
-  host  : 'smtp.gmail.com',
-  port  : 465,
-  secure: true,
-  auth  : {
+  service: 'gmail',
+  auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
+    pass: process.env.SMTP_PASS,
+  },
 });
 
-/* ------------------------------------------------------------------ */
-/* 3.  Route: POST /api/bookings                                       */
-/* ------------------------------------------------------------------ */
+// Helper: strip to last 10 digits
+const formatPhoneNumber = num => num.replace(/\D/g, '').slice(-10);
+
+// POST booking endpoint (public)
 router.post('/', async (req, res) => {
   try {
-    /* 3‑a  Customer (create if new) */
-    let user = await User.findOne({ phone: req.body.phone });
-    if (!user) {
-      user = await new User({
-        name : req.body.name,
-        phone: req.body.phone,
-        email: req.body.email
-      }).save();
+    // 1. Validate required fields
+    const required = [
+      'name','phone','vehicle',
+      'pickupLocation','dropoffLocation',
+      'date','time'
+    ];
+    const missing = required.filter(f => !req.body[f]);
+    if (missing.length) {
+      return res
+        .status(400)
+        .json({ error: `Missing required fields: ${missing.join(', ')}` });
     }
 
-    /* 3‑b  Assign the (single) test driver */
-    const driver = await Driver.findById('67fc8da6215db7b1625af726');
-    if (!driver) return res.status(400).json({ error: 'No drivers available' });
+    // 2. Find or create User
+    const { name, phone, email } = req.body;
+    let user = await User.findOne({ phone });
+    if (!user) {
+      user = await User.create({
+        name,
+        phone,
+        email: email || `${phone}@temp.com`,
+        password: phone, // temp password
+      });
+    }
 
-    /* 3‑c  Create booking */
-    let booking = await new Booking({
-      user            : user._id,
-      driver          : driver._id,
-      vehicle         : req.body.vehicle,
-      pickupLocation  : req.body.pickupLocation,
-      dropoffLocation : req.body.dropoffLocation,
-      date            : req.body.date,
-      time            : req.body.time,
-      special_requests: req.body.special_requests
-    }).save();
+    // 3. Assign Driver
+    const driver = await Driver.findOne(
+      process.env.DEFAULT_DRIVER_ID
+        ? { _id: process.env.DEFAULT_DRIVER_ID }
+        : {}
+    );
+    if (!driver) {
+      return res
+        .status(503)
+        .json({ error: 'No available drivers at this time' });
+    }
 
-    /* 3‑d  Populate driver for the client */
-    booking = await booking.populate('driver');
-
-    /* 3‑e  E‑mail the driver (no booking ID exposed) */
-    await transporter.sendMail({
-      from   : process.env.SMTP_USER,
-      to     : driver.email,
-      subject: '🛎️  New Ride Assigned',
-      text   : `
-Hi ${driver.name},
-
-A new ride has been booked.
-
-Passenger : ${user.name} (${user.phone})
-Vehicle   : ${booking.vehicle}
-Pickup    : ${booking.pickupLocation}
-Drop‑off  : ${booking.dropoffLocation}
-Date/Time : ${booking.date} ${booking.time}
-
-Please check your dashboard for details.
-`.trim()
+    // 4. Create Booking
+    const booking = await Booking.create({
+      user:             user._id,
+      driver:           driver._id,
+      vehicle:          req.body.vehicle,
+      pickupLocation:   req.body.pickupLocation,
+      dropoffLocation:  req.body.dropoffLocation,
+      date:             req.body.date,
+      time:             req.body.time,
+      special_requests: req.body.special_requests || '',
     });
 
-    /* 3‑f  **Optional SMS** via e‑mail‑to‑text gateway */
-    const smsAddress = buildSmsAddress(driver.phone, driver.carrier); // e.g. verizon
-    await transporter.sendMail({
-      from   : process.env.SMTP_USER,
-      to     : smsAddress,
-      subject: '',
-      text   : `New ride ${booking.pickupLocation} ➜ ${booking.dropoffLocation}
-${booking.date} ${booking.time}`
+    // 5. Populate for response
+    const populated = await Booking.findById(booking._id)
+      .populate('driver', 'name email phone carrier')
+      .populate('user',   'name phone');
+
+    // 6. Send response
+    res.status(201).json({
+      message: 'Booking created successfully',
+      booking: populated
     });
 
-    /* 3‑g  Real‑time push to driver dashboard */
-    req.app.locals.io?.emit('newBooking', booking);
+    // 7. Fire-and-forget notifications
+    (async function notify() {
+      try {
+        // Email to driver
+        await transporter.sendMail({
+          from: process.env.SMTP_USER,
+          to: driver.email,
+          subject: '🚕 New Ride Assignment',
+          text: formatBookingDetails(populated)
+        });
 
-    /* 3‑h  Respond to front‑end */
-    res.status(201).json({ message: 'Booking created', booking });
+        // SMS via email-to-SMS
+        const smsTo = `${formatPhoneNumber(driver.phone)}@${
+          CARRIER_GATEWAYS[driver.carrier] || CARRIER_GATEWAYS.verizon
+        }`;
+        await transporter.sendMail({
+          from: process.env.SMTP_USER,
+          to: smsTo,
+          text: `New ride: ${populated.pickupLocation} → ${populated.dropoffLocation} at ${populated.time}`
+        });
+
+        // Real-time emit to any connected clients
+        req.app.locals.io.emit('booking:new', populated);
+      } catch (err) {
+        console.error('Notification error:', err);
+      }
+    })();
 
   } catch (err) {
-    console.error('Error creating booking:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Booking error:', err);
+    res
+      .status(500)
+      .json({ error: err.message || 'Internal server error' });
   }
 });
 
-/* ------------------------------------------------------------------ */
-/* 4.  Route: GET /api/bookings (dashboard)                            */
-/* ------------------------------------------------------------------ */
-router.get('/', async (_req, res) => {
+// GET all bookings (protected)
+router.get('/', protect, async (req, res) => {
   try {
-    const bookings = await Booking.find().sort({ date: -1 }).populate('driver');
-    res.json({ bookings });
+    const list = await Booking.find()
+      .sort({ date: -1, time: -1 })
+      .populate('driver', 'name phone')
+      .populate('user',   'name phone');
+    res.json({ bookings: list });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Fetch error:', err);
+    res.status(500).json({ error: 'Failed to retrieve bookings' });
   }
 });
+
+// Helper to format email text
+function formatBookingDetails(b) {
+  return `
+Passenger: ${b.user.name} (${b.user.phone})
+Vehicle:   ${b.vehicle}
+Pickup:    ${b.pickupLocation}
+Dropoff:   ${b.dropoffLocation}
+Date/Time: ${b.date} ${b.time}
+Requests:  ${b.special_requests || 'None'}
+  `.trim();
+}
 
 module.exports = router;
