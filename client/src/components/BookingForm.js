@@ -1,4 +1,4 @@
-// src/components/BookingForm.js
+// client/src/components/BookingForm.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,14 +7,12 @@ export default function BookingForm() {
     name: '',
     email: '',
     phone: '',
-    password: '',
     vehicle: '',
     pickup_time: '',
     pickup_location: '',
     dropoff_location: '',
     special_requests: ''
   });
-  const [phoneExists, setPhoneExists] = useState(null); // null = unchecked
   const [responseMessage, setResponseMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -23,75 +21,14 @@ export default function BookingForm() {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handlePhoneBlur = async () => {
-    if (!formData.phone) return;
-    try {
-      const res = await fetch('/api/auth/check-phone', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: formData.phone })
-      });
-      const { exists } = await res.json();
-      setPhoneExists(exists);
-    } catch {
-      setPhoneExists(false);
-    }
-  };
-
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     setResponseMessage('');
 
     try {
-      // 1) Grab the same key your App.js uses:
       const token = localStorage.getItem('userToken');
-
-      // 2) If already logged in, just book:
-      if (token) {
-        await submitBooking(token);
-        return;
-      }
-
-      // 3) If phone exists, do login flow:
-      if (phoneExists) {
-        if (!formData.password) {
-          throw new Error('Please enter your password to sign in.');
-        }
-        const loginRes = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone: formData.phone,
-            password: formData.password
-          })
-        });
-        if (!loginRes.ok) {
-          const err = await loginRes.json();
-          throw new Error(err.message || 'Login failed');
-        }
-        const { token: newToken } = await loginRes.json();
-        // **Store under** userToken
-        localStorage.setItem('userToken', newToken);
-        await submitBooking(newToken);
-
-      } else {
-        // 4) New user → send verification & go to **/verify-phone**
-        const verificationRes = await fetch('/api/auth/send-verification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: formData.phone })
-        });
-        if (!verificationRes.ok) {
-          throw new Error('Failed to send verification code');
-        }
-        navigate('/verify-phone', {
-          state: {
-            bookingData: formData,
-            phone: formData.phone
-          }
-        });
-      }
+      await submitBooking(token);
     } catch (err) {
       setResponseMessage(err.message);
     } finally {
@@ -99,7 +36,7 @@ export default function BookingForm() {
     }
   };
 
-  // helper to actually post the booking once we have a valid token
+  // helper to post booking once (token optional)
   const submitBooking = async token => {
     const [date, time] = formData.pickup_time.split('T');
     const bookingPayload = {
@@ -114,16 +51,20 @@ export default function BookingForm() {
       special_requests: formData.special_requests
     };
 
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch('/api/bookings', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers,
       body: JSON.stringify(bookingPayload)
     });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Booking failed');
+
+    // on success, go straight to confirmation
     navigate('/confirmation', { state: { booking: result.booking } });
   };
 
@@ -134,7 +75,10 @@ export default function BookingForm() {
         <div className="form-group">
           <label htmlFor="name">Full Name</label>
           <input
-            type="text" id="name" name="name" required
+            type="text"
+            id="name"
+            name="name"
+            required
             placeholder="John Doe"
             value={formData.name}
             onChange={handleChange}
@@ -143,7 +87,10 @@ export default function BookingForm() {
         <div className="form-group">
           <label htmlFor="email">Email</label>
           <input
-            type="email" id="email" name="email" required
+            type="email"
+            id="email"
+            name="email"
+            required
             placeholder="john@example.com"
             value={formData.email}
             onChange={handleChange}
@@ -151,36 +98,29 @@ export default function BookingForm() {
         </div>
       </div>
 
-      {/* Phone & Password (if existing user) */}
+      {/* Phone */}
       <div className="form-row">
         <div className="form-group">
           <label htmlFor="phone">Phone Number</label>
           <input
-            type="tel" id="phone" name="phone" required
+            type="tel"
+            id="phone"
+            name="phone"
+            required
             placeholder="(123) 456-7890"
             value={formData.phone}
             onChange={handleChange}
-            onBlur={handlePhoneBlur}
           />
         </div>
-        {phoneExists && (
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password" id="password" name="password" required
-              placeholder="Your account password"
-              value={formData.password}
-              onChange={handleChange}
-            />
-          </div>
-        )}
       </div>
 
       {/* Vehicle */}
       <div className="form-group">
         <label htmlFor="vehicle">Vehicle Type</label>
         <select
-          id="vehicle" name="vehicle" required
+          id="vehicle"
+          name="vehicle"
+          required
           value={formData.vehicle}
           onChange={handleChange}
         >
@@ -192,10 +132,12 @@ export default function BookingForm() {
 
       {/* Date & Time */}
       <div className="form-group">
-        <label htmlFor="pickup_time">Pickup Date &amp; Time</label>
+        <label htmlFor="pickup_time">Pickup Date & Time</label>
         <input
           type="datetime-local"
-          id="pickup_time" name="pickup_time" required
+          id="pickup_time"
+          name="pickup_time"
+          required
           value={formData.pickup_time}
           onChange={handleChange}
         />
@@ -206,7 +148,10 @@ export default function BookingForm() {
         <div className="form-group">
           <label htmlFor="pickup_location">Pickup Location</label>
           <input
-            type="text" id="pickup_location" name="pickup_location" required
+            type="text"
+            id="pickup_location"
+            name="pickup_location"
+            required
             placeholder="123 Main St, Kenner, LA"
             value={formData.pickup_location}
             onChange={handleChange}
@@ -215,7 +160,10 @@ export default function BookingForm() {
         <div className="form-group">
           <label htmlFor="dropoff_location">Dropoff Location</label>
           <input
-            type="text" id="dropoff_location" name="dropoff_location" required
+            type="text"
+            id="dropoff_location"
+            name="dropoff_location"
+            required
             placeholder="456 Elm St, New Orleans, LA"
             value={formData.dropoff_location}
             onChange={handleChange}
@@ -227,7 +175,9 @@ export default function BookingForm() {
       <div className="form-group">
         <label htmlFor="special_requests">Special Requests (Optional)</label>
         <textarea
-          id="special_requests" name="special_requests" rows="3"
+          id="special_requests"
+          name="special_requests"
+          rows="3"
           placeholder="Child seats, extra luggage, etc."
           value={formData.special_requests}
           onChange={handleChange}
@@ -240,7 +190,11 @@ export default function BookingForm() {
       </button>
 
       {responseMessage && (
-        <div className={responseMessage.toLowerCase().includes('failed') ? 'error' : 'success'}>
+        <div
+          className={
+            responseMessage.toLowerCase().includes('failed') ? 'error' : 'success'
+          }
+        >
           {responseMessage}
         </div>
       )}

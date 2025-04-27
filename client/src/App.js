@@ -1,4 +1,4 @@
-// client/src/App.js
+// src/App.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
@@ -8,33 +8,33 @@ import Header           from './components/Header';
 import Footer           from './components/Footer';
 import LoadingSpinner   from './components/LoadingSpinner';
 import ProtectedRoute   from './components/ProtectedRoute';
-import VerifyPhone      from './components/VerifyPhone';
 import NotFoundPage     from './pages/NotFoundPage';
 
 // Pages
-import LoginPage        from './pages/LoginPage';
-import SignupPage       from './pages/SignupPage';
-import ForgotPasswordPage  from './pages/ForgotPasswordPage';
-import ResetPasswordPage   from './pages/ResetPasswordPage';
-import CustomerHome     from './pages/CustomerHome';
-import RideStatusPage   from './pages/RideStatusPage';
-import FareEstimatePage from './pages/FareEstimatePage';
-import ConfirmationPage from './pages/ConfirmationPage';
+import LoginPage            from './pages/LoginPage';
+import SignupPage           from './pages/SignupPage';
+import ForgotPasswordPage   from './pages/ForgotPasswordPage';
+import ResetPasswordPage    from './pages/ResetPasswordPage';
+import CustomerHome         from './pages/CustomerHome';
+import RideStatusPage       from './pages/RideStatusPage';
+import FareEstimatePage     from './pages/FareEstimatePage';
+import ConfirmationPage     from './pages/ConfirmationPage';
 
 // Misc
 import BookingForm      from './components/BookingForm';
 import { API_BASE_URL } from './config';
 
 export default function App() {
-  const [authState, setAuthState] = useState(() => ({
+  const [authState, setAuthState] = useState({
     token: localStorage.getItem('userToken'),
     loading: true,
     error: null
-  }));
+  });
+
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Apply baseURL and Authorization header whenever token changes
+  // axios default config
   useEffect(() => {
     axios.defaults.baseURL = API_BASE_URL;
     if (authState.token) {
@@ -44,23 +44,22 @@ export default function App() {
     }
   }, [authState.token]);
 
-  // Verify token on mount & route change
+  // verify token on route change
   useEffect(() => {
-    const verifyToken = async () => {
-      try {
-        if (authState.token) {
-          await axios.get('/api/auth/verify');
-          setAuthState(prev => ({ ...prev, loading: false, error: null }));
-        } else {
-          setAuthState(prev => ({ ...prev, loading: false }));
-        }
-      } catch (error) {
-        console.error('Authentication error:', error);
-        handleLogout('Session expired. Please log in again.');
-        setAuthState(prev => ({ ...prev, loading: false }));
+    async function verify() {
+      if (!authState.token) {
+        setAuthState(s => ({ ...s, loading: false }));
+        return;
       }
-    };
-    verifyToken();
+      try {
+        await axios.get('/api/auth/verify');
+        setAuthState(s => ({ ...s, loading: false, error: null }));
+      } catch {
+        handleLogout('Session expired. Please log in again.');
+        setAuthState(s => ({ ...s, loading: false }));
+      }
+    }
+    verify();
   }, [location.pathname]);
 
   const handleLogin = newToken => {
@@ -71,7 +70,7 @@ export default function App() {
 
   const handleLogout = message => {
     localStorage.removeItem('userToken');
-    setAuthState({ token: null, loading: false, error: message || 'Logged out successfully' });
+    setAuthState({ token: null, loading: false, error: message || null });
     navigate('/login', { state: { message } });
   };
 
@@ -89,41 +88,44 @@ export default function App() {
 
       <main className="main-content">
         <Routes>
-          {/* public / guest-only */}
-          <Route path="/login" element={
-            <GuestRoute token={authState.token}>
-              <LoginPage onLogin={handleLogin} />
-            </GuestRoute>
-          }/>
-          <Route path="/signup" element={
-            <GuestRoute token={authState.token}>
-              <SignupPage onSignup={handleLogin} />
-            </GuestRoute>
-          }/>
+          {/* Public Home */}
+          <Route path="/" element={<CustomerHome />} />
 
-          {/* always public */}
-          <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
+          {/* Guest-only */}
+          <Route
+            path="/login"
+            element={
+              authState.token
+                ? <Navigate to="/" replace />
+                : <LoginPage onLogin={handleLogin} />
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              authState.token
+                ? <Navigate to="/" replace />
+                : <SignupPage onSignup={handleLogin} />
+            }
+          />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route
+            path="/reset-password"
+            element={
+              authState.token
+                ? <Navigate to="/" replace />
+                : <ResetPasswordPage onLogin={handleLogin} />
+            }
+          />
 
-          <Route path="/resetpassword" element={
-            <GuestRoute token={authState.token}>
-              <ResetPasswordPage onLogin={handleLogin} />
-            </GuestRoute>
-          }/>
-
-          {/* semi-public */}
-          <Route path="/book" element={<BookingForm onLogin={handleLogin} />} />
+          {/* Booking workflow without verify/login */}
+          <Route path="/book" element={<BookingForm />} />
           <Route path="/fare-estimate" element={<FareEstimatePage />} />
+          <Route path="/confirmation" element={<ConfirmationPage />} />
 
-          {/* must verify phone */}
-          <Route element={<ProtectedRoute token={authState.token} requiresVerification />}>
-            <Route path="/verify-phone" element={<VerifyPhone onVerify={handleLogin} />} />
-          </Route>
-
-          {/* fully protected */}
+          {/* Protected: ride status */}
           <Route element={<ProtectedRoute token={authState.token} />}>
-            <Route path="/" element={<CustomerHome />} />
             <Route path="/ride-status" element={<RideStatusPage />} />
-            <Route path="/confirmation" element={<ConfirmationPage />} />
           </Route>
 
           {/* 404 */}
@@ -136,7 +138,3 @@ export default function App() {
     </div>
   );
 }
-
-const GuestRoute = ({ children, token }) => {
-  return token ? <Navigate to="/" replace /> : children;
-};

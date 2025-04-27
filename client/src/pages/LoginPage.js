@@ -1,8 +1,11 @@
-// client/src/components/LoginPage.js
+// client/src/pages/LoginPage.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
-import PasswordToggle from '../components/PasswordToggle'; // make sure this path is correct
+import Header from '../components/Header';
+import PasswordToggle from '../components/PasswordToggle';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 export default function LoginPage({ onLogin }) {
   const [formData, setFormData] = useState({
@@ -13,11 +16,10 @@ export default function LoginPage({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [phoneExists, setPhoneExists] = useState(null); // null = unchecked
+  const [phoneExists, setPhoneExists] = useState(null);
   const [checkingPhone, setCheckingPhone] = useState(false);
   const navigate = useNavigate();
 
-  // On mount, load remembered phone
   useEffect(() => {
     const saved = localStorage.getItem('rememberedPhone');
     if (saved) {
@@ -27,14 +29,12 @@ export default function LoginPage({ onLogin }) {
     }
   }, []);
 
-  // Helper to format digits into (123) 456-7890
   const formatInput = digits => {
     if (digits.length <= 3) return digits;
     if (digits.length <= 6) return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
     return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6,10)}`;
   };
 
-  // Handle phone input changes
   const handlePhoneChange = e => {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
     setFormData(prev => ({ ...prev, phone: formatInput(digits) }));
@@ -42,22 +42,20 @@ export default function LoginPage({ onLogin }) {
     setPhoneExists(null);
   };
 
-  // On blur, check if phone exists in backend
   const handlePhoneBlur = async () => {
     const clean = formData.phone.replace(/\D/g, '');
     if (clean.length !== 10) return;
     setCheckingPhone(true);
     try {
-      const res = await fetch('/api/auth/check-phone', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/check-phone`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: clean })
+        body: JSON.stringify({ phone: clean }),
+        credentials: 'include'
       });
       const { exists } = await res.json();
       setPhoneExists(exists);
-      if (!exists) {
-        setError('No account found. Please sign up.');
-      }
+      if (!exists) setError('No account found. Please sign up.');
     } catch (err) {
       console.error('Phone check failed', err);
     } finally {
@@ -65,52 +63,40 @@ export default function LoginPage({ onLogin }) {
     }
   };
 
-  // Handle password input
   const handlePasswordChange = e => {
     setFormData(prev => ({ ...prev, password: e.target.value }));
     setError('');
   };
 
-  // Toggle password visibility
-  const handleToggle = () => {
-    setShowPassword(show => !show);
-  };
+  const handleToggle = () => setShowPassword(show => !show);
 
-  // Handle remember checkbox
   const handleRememberChange = e => {
     setFormData(prev => ({ ...prev, rememberMe: e.target.checked }));
   };
 
-  // Submit login
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
-    if (phoneExists === false) {
-      setError('No account found. Please sign up.');
-      return;
-    }
+    if (phoneExists === false) return;
     setLoading(true);
 
     try {
       const clean = formData.phone.replace(/\D/g, '');
-      if (clean.length !== 10) {
-        throw new Error('Enter a valid 10-digit phone number');
-      }
+      if (clean.length !== 10) throw new Error('Invalid phone number');
 
-      const res = await axios.post('/api/auth/login', {
-        phone: clean,
-        password: formData.password
-      });
+      const res = await axios.post(
+        `${API_BASE_URL}/api/auth/login`,
+        { phone: clean, password: formData.password },
+        { withCredentials: true }
+      );
 
       const { token } = res.data;
-      if (!token) throw new Error('No token returned');
+      if (!token) throw new Error('Authentication failed');
 
-      // Persist token and set axios header
       localStorage.setItem('userToken', token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       onLogin(token);
 
-      // Remember phone if checked
       if (formData.rememberMe) {
         localStorage.setItem('rememberedPhone', clean);
       } else {
@@ -120,72 +106,76 @@ export default function LoginPage({ onLogin }) {
       navigate('/', { replace: true });
     } catch (err) {
       const msg = err.response?.data?.error || err.message || 'Login failed';
-      setError(msg);
+      setError(msg.includes('ECONNREFUSED') ? 'Connection error' : msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="login-container">
-      <h2>Log In</h2>
-      {error && <div className="error-message">{error}</div>}
+    <>
+      <Header />
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="phone">Phone Number</label>
-          <input
-            id="phone"
-            type="tel"
-            placeholder="(123) 456-7890"
-            value={formData.phone}
-            onChange={handlePhoneChange}
-            onBlur={handlePhoneBlur}
-            required
-          />
-          {checkingPhone && <div className="field-note">Checking phone…</div>}
-        </div>
+      <div className="login-container">
+        <h2>Log In</h2>
+        {error && <div className="error-message">{error}</div>}
 
-        <div className="form-group password-group">
-          <label htmlFor="password">Password</label>
-          <div className="password-wrapper">
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="phone">Phone Number</label>
             <input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handlePasswordChange}
+              id="phone"
+              type="tel"
+              placeholder="(123) 456-7890"
+              value={formData.phone}
+              onChange={handlePhoneChange}
+              onBlur={handlePhoneBlur}
               required
             />
-            <PasswordToggle showPassword={showPassword} onToggle={handleToggle} />
+            {checkingPhone && <div className="field-note">Checking phone…</div>}
           </div>
-        </div>
 
-        <div className="form-options">
-          <label>
-            <input
-              type="checkbox"
-              checked={formData.rememberMe}
-              onChange={handleRememberChange}
-            /> Remember Me
-          </label>
-          <Link to="/forgotpassword" className="forgot-link">
-            Forgot password?
-          </Link>
-        </div>
+          <div className="form-group password-group">
+            <label htmlFor="password">Password</label>
+            <div className="password-wrapper">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handlePasswordChange}
+                required
+              />
+              <PasswordToggle showPassword={showPassword} onToggle={handleToggle} />
+            </div>
+          </div>
 
-        <button
-          type="submit"
-          disabled={loading || phoneExists === false}
-          className="btn"
-        >
-          {loading ? 'Logging in…' : 'Log In'}
-        </button>
-      </form>
+          <div className="form-options">
+            <label>
+              <input
+                type="checkbox"
+                checked={formData.rememberMe}
+                onChange={handleRememberChange}
+              /> Remember Me
+            </label>
+            <Link to="/forgot-password" className="forgot-link">
+              Forgot password?
+            </Link>
+          </div>
 
-      <p className="signup-prompt">
-        Need an account? 👉 <Link to="/signup">Sign up</Link>
-      </p>
-    </div>
+          <button
+            type="submit"
+            disabled={loading || phoneExists === false}
+            className="btn"
+          >
+            {loading ? 'Logging in…' : 'Log In'}
+          </button>
+        </form>
+
+        <p className="signup-prompt">
+          Need an account? 👉 <Link to="/signup">Sign up</Link>
+        </p>
+      </div>
+    </>
   );
 }

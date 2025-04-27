@@ -2,24 +2,20 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
-const express = require('express');
-const http = require('http');
-const mongoose = require('mongoose');
-
-// Suppress deprecation warning for strictQuery in Mongoose 7
-mongoose.set('strictQuery', true);
-
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+const express       = require('express');
+const http          = require('http');
+const mongoose      = require('mongoose');
+const cors          = require('cors');
+const helmet        = require('helmet');
+const rateLimit     = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
-const socketIo = require('socket.io');
+const socketIo      = require('socket.io');
 
-// Authentication middleware
+// Auth middleware factory
 const { protect } = require('./middleware/auth');
 const protectDriver = protect('driver');
 
-// Route handlers
+// Routes
 const authRoutes       = require('./routes/auth');
 const bookingRoutes    = require('./routes/bookings');
 const pricingRoutes    = require('./routes/pricing');
@@ -45,7 +41,7 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
+// 2. Rate limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200,
@@ -54,20 +50,20 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-// 2. Body parsing & sanitization
+// 3. Body parsing & sanitization
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(mongoSanitize());
 
-// 3. API routes
+// 4. Mount API routes
 app.use('/api/auth', authRoutes);
-app.use('/api/bookings', protect(), bookingRoutes);
+app.use('/api/bookings', bookingRoutes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/tracking', trackingRoutes);
 app.use('/api/assignment', assignmentRoutes);
 app.use('/api/drivers', protectDriver, driverRoutes);
 
-// 4. Serve React build (production only)
+// 5. Serve React in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.resolve(__dirname, '../client/build')));
   app.get('*', (_, res) => {
@@ -75,16 +71,17 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// 5. WebSocket setup
+// 6. WebSocket setup
 io.on('connection', socket => {
   console.log('Socket connected:', socket.id);
   socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
 });
 app.locals.io = io;
 
-// 6. Database connection & server start
+// 7. Connect to MongoDB & start server
 const startServer = async () => {
   try {
+    mongoose.set('strictQuery', true);
     await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -101,10 +98,9 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-
 startServer();
 
-// 7. Graceful shutdown
+// 8. Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received: closing server');
   server.close(() => {
@@ -115,7 +111,7 @@ process.on('SIGTERM', () => {
   });
 });
 
-// 8. Global error handler
+// 9. Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({

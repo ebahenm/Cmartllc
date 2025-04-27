@@ -1,6 +1,7 @@
 // client/src/pages/SignupPage.js
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import Header from '../components/Header';
 
 export default function SignupPage({ onSignup }) {
   const location = useLocation();
@@ -36,11 +37,12 @@ export default function SignupPage({ onSignup }) {
       case 'email':
         if (value && !/^\S+@\S+\.\S+$/.test(value)) return 'Invalid email address';
         break;
-      case 'phone':
-        if (!/^\d{10}$/.test(value.replace(/\D/g, '')))
-          return 'Enter a 10-digit phone number';
+      case 'phone': {
+        const clean = value.replace(/\D/g, '');
+        if (!/^\d{10}$/.test(clean)) return 'Enter a 10-digit phone number';
         if (phoneExists) return 'Phone already registered';
         break;
+      }
       case 'password':
         if (value.length < 8) return 'Password must be at least 8 characters';
         if (!/[A-Z]/.test(value)) return 'At least one uppercase letter';
@@ -148,79 +150,83 @@ export default function SignupPage({ onSignup }) {
   };
 
   return (
-    <section className="auth-section">
-      <div className="auth-card">
-        <h2>Create an Account</h2>
-        {errors.general && <div className="form-error">{errors.general}</div>}
+    <>
+      <Header />
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="form-group">
-            <label htmlFor="name">Full Name</label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              value={formData.name}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              className={errors.name ? 'error' : ''}
-            />
-            {errors.name && <div className="field-error">{errors.name}</div>}
-          </div>
+      <section className="auth-section">
+        <div className="auth-card">
+          <h2>Create an Account</h2>
+          {errors.general && <div className="form-error">{errors.general}</div>}
 
-          <div className="form-group">
-            <label htmlFor="email">Email (optional)</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              className={errors.email ? 'error' : ''}
-            />
-            {errors.email && <div className="field-error">{errors.email}</div>}
-          </div>
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="form-group">
+              <label htmlFor="name">Full Name</label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleChange}
+                disabled={isSubmitting}
+                className={errors.name ? 'error' : ''}
+              />
+              {errors.name && <div className="field-error">{errors.name}</div>}
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="phone">Phone Number</label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={handleChange}
-              onBlur={handlePhoneBlur}
-              disabled={isSubmitting || !!initialPhone}
-              className={errors.phone ? 'error' : ''}
-            />
-            {checkingPhone && <div className="field-note">Checking phone…</div>}
-            {errors.phone && <div className="field-error">{errors.phone}</div>}
-          </div>
+            <div className="form-group">
+              <label htmlFor="email">Email (optional)</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                disabled={isSubmitting}
+                className={errors.email ? 'error' : ''}
+              />
+              {errors.email && <div className="field-error">{errors.email}</div>}
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              className={errors.password ? 'error' : ''}
-            />
-            {errors.password && <div className="field-error">{errors.password}</div>}
-          </div>
+            <div className="form-group">
+              <label htmlFor="phone">Phone Number</label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleChange}
+                onBlur={handlePhoneBlur}
+                disabled={isSubmitting || !!initialPhone}
+                className={errors.phone ? 'error' : ''}
+              />
+              {checkingPhone && <div className="field-note">Checking phone…</div>}
+              {errors.phone && <div className="field-error">{errors.phone}</div>}
+            </div>
 
-          <button type="submit" className="btn" disabled={isSubmitting || phoneExists}>
-            {isSubmitting ? 'Creating Account…' : 'Sign Up'}
-          </button>
-        </form>
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                disabled={isSubmitting}
+                className={errors.password ? 'error' : ''}
+              />
+              {errors.password && <div className="field-error">{errors.password}</div>}
+            </div>
 
-        <p className="auth-footer">
-        Already have an account? 👉 <a href="/login"> Sign in</a>
-        </p>
-      </div>
-    </section>
+            <button type="submit" className="btn" disabled={isSubmitting || phoneExists}>
+              {isSubmitting ? 'Creating Account…' : 'Sign Up'}
+            </button>
+          </form>
+
+          <p className="auth-footer">
+            Already have an account? 👉 <Link to="/login">Sign in</Link>
+          </p>
+        </div>
+      </section>
+    </>
   );
 }

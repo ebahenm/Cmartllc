@@ -1,52 +1,62 @@
-// models/Booking.js
+// server/models/Booking.js
 const mongoose = require('mongoose');
-const { Schema } = mongoose;
 
-const bookingSchema = new Schema({
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
+const BookingSchema = new mongoose.Schema({
+  // Guest info
+  name: {
+    type: String,
     required: true
   },
+  phone: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    default: ''
+  },
+
+  // Assigned driver
   driver: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'Driver',
     required: true
   },
+
+  // Ride details
   vehicle: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   pickupLocation: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   dropoffLocation: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   date: {
-    type: String,  // e.g. "2025-04-17"
+    type: String,
     required: true
   },
   time: {
-    type: String,  // e.g. "14:30"
+    type: String,
     required: true
   },
   special_requests: {
     type: String,
-    trim: true
+    default: ''
   },
-  status: {
-    type: String,
-    enum: ['assigned', 'accepted', 'in_progress', 'completed', 'cancelled'],
-    default: 'assigned'
+
+  // Optional user reference (for logged-in bookings)
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    // remove `required: true` so it's optional
   }
 }, {
   timestamps: true
 });
 
-module.exports = mongoose.model('Booking', bookingSchema);
+module.exports = mongoose.model('Booking', BookingSchema);
