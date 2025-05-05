@@ -78,16 +78,18 @@ router.get('/verify', protect(), (req, res) => {
 });
 
 // ── Check Phone ────────────────────────────────────────────────────────────
+// POST /api/auth/check-phone
 router.post('/check-phone', async (req, res) => {
   try {
     const cleanPhone = req.body.phone.replace(/\D/g, '').slice(-10);
-    const exists = Boolean(await User.findOne({ phone: cleanPhone }));
+    const exists = !!(await User.findOne({ phone: cleanPhone }));
     res.json({ exists });
   } catch (err) {
-    console.error('Check-phone error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Phone check error:', err);
+    res.status(500).json({ error: 'Server error checking phone' });
   }
 });
+
 
 // ── Forgot Password ────────────────────────────────────────────────────────
 router.post('/forgotpassword', async (req, res) => {

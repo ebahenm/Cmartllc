@@ -5,7 +5,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import PasswordToggle from '../components/PasswordToggle';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+//const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = '';
 
 export default function LoginPage({ onLogin }) {
   const [formData, setFormData] = useState({
@@ -47,17 +48,12 @@ export default function LoginPage({ onLogin }) {
     if (clean.length !== 10) return;
     setCheckingPhone(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/check-phone`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: clean }),
-        credentials: 'include'
-      });
-      const { exists } = await res.json();
-      setPhoneExists(exists);
-      if (!exists) setError('No account found. Please sign up.');
+      const { data } = await axios.post('/api/auth/check-phone', { phone: clean });
+      setPhoneExists(data.exists);
+      if (!data.exists) setError('No account found. Please sign up.');
     } catch (err) {
       console.error('Phone check failed', err);
+      setError('Unable to verify phone right now.');
     } finally {
       setCheckingPhone(false);
     }
@@ -76,6 +72,11 @@ export default function LoginPage({ onLogin }) {
 
   const handleSubmit = async e => {
     e.preventDefault();
+    console.log('🔥 handleSubmit fired, payload:', {
+      phone: formData.phone,
+      password: formData.password
+    });
+
     setError('');
     if (phoneExists === false) return;
     setLoading(true);
@@ -84,13 +85,12 @@ export default function LoginPage({ onLogin }) {
       const clean = formData.phone.replace(/\D/g, '');
       if (clean.length !== 10) throw new Error('Invalid phone number');
 
-      const res = await axios.post(
-        `${API_BASE_URL}/api/auth/login`,
-        { phone: clean, password: formData.password },
-        { withCredentials: true }
-      );
-
+      const res = await axios.post('/api/auth/login', {
+        phone: clean,
+        password: formData.password
+      });
       const { token } = res.data;
+      
       if (!token) throw new Error('Authentication failed');
 
       localStorage.setItem('userToken', token);

@@ -1,6 +1,8 @@
 // server/server.js
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+//require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+require('dotenv').config();
+
 
 const express       = require('express');
 const http          = require('http');
@@ -40,6 +42,11 @@ app.use(cors({
   methods: ['GET','POST','PUT','DELETE'],
   credentials: true
 }));
+app.use((req, res, next) => {
+  console.log('→', req.method, req.originalUrl);
+  next();
+});
+
 
 // 2. Rate limiting
 const apiLimiter = rateLimit({
@@ -65,9 +72,10 @@ app.use('/api/drivers', protectDriver, driverRoutes);
 
 // 5. Serve React in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.resolve(__dirname, '../client/build')));
-  app.get('*', (_, res) => {
-    res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
+  const buildPath = path.resolve(__dirname, '../client/build');
+  app.use(express.static(buildPath));
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
   });
 }
 

@@ -13,8 +13,8 @@ function CustomerHome() {
             Experience comfort, style, and reliability with our premium fleet
           </p>
           <div className="hero-buttons">
-            <a href="#book" className="btn">Book Now</a>
-            <a href="tel:+15046410004" className="btn btn-outline">Call Now</a>
+            <a href="tel:+15046410004" className="btn">Call Now</a>
+            <a href="#book" className="btn  btn-outline">Book Now</a>
           </div>
         </div>
       </section>

@@ -17,7 +17,7 @@ const Driver   = require('../server/models/Driver');
       name:     'Lemin',
       phone,
       email:    'mohamed.lemine.bhn@gmail.com',
-      password: '$2b$10$0o5XPrUVJp4KtL3UwzwOMOrQ7/sbOd5Y6rMhlkYAS7SsN6DEdSlq.',  
+      password: '$2b$12$7SKjWLsPvVfq5xdKmTDNP.IHDsO9dXTvWePNvbfrjq6UgIofm5M5q',  
       carrier:  'verizon'
     });
     console.log('Created driver:', driver);
